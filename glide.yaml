@@ -2,3 +2,4 @@ package: github.com/silsuer/bingo-orm
 import:
 - package: github.com/go-sql-driver/mysql
   version: v1.4.0
+- package: github.com/silsuer/bingo-events

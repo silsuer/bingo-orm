@@ -1,4 +1,4 @@
-package bingo_orm
+package db
 
 import (
 	"database/sql"

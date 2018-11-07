@@ -1,10 +1,6 @@
-package mysql
+package db
 
-import (
-	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/silsuer/bingo-orm"
-)
+import "database/sql"
 
 type MysqlConnector struct {
 	connection *sql.DB
@@ -64,7 +60,7 @@ func (m MysqlConnector) GetConn() *sql.DB {
 }
 
 // 新建连接器
-func NewConnector(config map[string]string) bingo_orm.Connector {
+func NewConnector(config map[string]string) Connector {
 	c := &MysqlConnector{}
 	c.SetConn(config)
 	return c

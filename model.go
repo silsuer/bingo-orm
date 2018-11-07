@@ -1,2 +1,0 @@
-package bingo_orm
-

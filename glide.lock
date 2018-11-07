@@ -1,6 +1,8 @@
-hash: d622bde2f157273532c904c7b1c79505467f9a4790d5190372c7017dbbea4229
-updated: 2018-10-31T14:28:46.960897901+08:00
+hash: 490369b838692acef0e4c866733eed40b0a343fff4594033b803ac9babe0e29a
+updated: 2018-11-07T20:26:49.453206537+08:00
 imports:
 - name: github.com/go-sql-driver/mysql
   version: d523deb1b23d913de5bdada721a6071e71283618
+- name: github.com/silsuer/bingo-events
+  version: b6f7fa7605ae6df8a439ec52f16580760ee5927a
 testImports: []

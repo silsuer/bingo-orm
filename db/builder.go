@@ -1,4 +1,4 @@
-package bingo_orm
+package db
 
 type Builder interface {
 	GetConnector() *Connector
