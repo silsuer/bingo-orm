@@ -19,11 +19,16 @@ const (
 // mysql实现 blueprint
 type MysqlBlueprint struct {
 	Blueprint
-	name       string // 表名
-	engine     string
-	columns    []*MysqlColumn
-	currentCol *MysqlColumn
-	charset    string
+	name              string // 表名
+	engine            string
+	columns           []*MysqlColumn
+	currentCol        *MysqlColumn
+	charset           string
+	indexList         []string   // 普通索引
+	combineIndexList  [][]string // 组合索引数组
+	uniqueIndexList   []string   // 唯一索引
+	fulltextIndexList []string   // 全文索引
+	primaryKey        string     // 主键索引
 }
 
 type MysqlColumn struct {
@@ -126,6 +131,29 @@ func (mb *MysqlBlueprint) Engine(engine string) IBlueprint {
 	return mb
 }
 
+// 普通索引
+func (mb *MysqlBlueprint) Index(columns ...string) {
+	if len(columns) == 1 {
+		mb.indexList = append(mb.indexList, columns[0])
+	} else {
+		mb.combineIndexList = append(mb.combineIndexList, columns)
+	}
+}
+
+// 唯一索引
+func (mb *MysqlBlueprint) UniqueIndex(column string) {
+	mb.uniqueIndexList = append(mb.uniqueIndexList, column)
+}
+
+// 全文索引
+func (mb *MysqlBlueprint) FullTextIndex(column string) {
+	mb.fulltextIndexList = append(mb.fulltextIndexList, column)
+}
+
+func (mb *MysqlBlueprint) PrimaryKey(column string) {
+	mb.primaryKey = column
+}
+
 // 将表结构拼装成sql语句
 func Assembly(createType int, schema *MysqlBlueprint) string {
 	var sql string
@@ -140,6 +168,30 @@ func Assembly(createType int, schema *MysqlBlueprint) string {
 	for k := range schema.columns {
 		columnSql = append(columnSql, columnAssembly(schema.columns[k]))
 	}
+
+	// 拼接索引
+	// 拼接主键索引
+	if schema.primaryKey != "" {
+		columnSql = append(columnSql, primaryKeyAssembly(schema.primaryKey))
+	}
+
+	// 拼接普通索引
+	for k := range schema.indexList {
+		columnSql = append(columnSql, indexAssembly(schema.indexList[k]))
+	}
+	// 拼接唯一索引
+	for k := range schema.uniqueIndexList {
+		columnSql = append(columnSql, uniqueIndexAssembly(schema.uniqueIndexList[k]))
+	}
+	// 拼接组合索引
+	for k := range schema.combineIndexList {
+		columnSql = append(columnSql, combineIndexAssembly(schema.combineIndexList[k]))
+	}
+	// 拼接全文索引
+	for k := range schema.fulltextIndexList {
+		columnSql = append(columnSql, fulltextIndexAssembly(schema.fulltextIndexList[k]))
+	}
+
 	sql += strings.Join(columnSql, ",") + ")ENGINE=" + schema.engine
 
 	if schema.charset != "" {
@@ -149,13 +201,39 @@ func Assembly(createType int, schema *MysqlBlueprint) string {
 	return sql
 }
 
+// 主键索引
+func primaryKeyAssembly(name string) string {
+	//primary key (user_id)
+	return `primary key (` + name + `)`
+}
+
+// 拼接普通索引
+func indexAssembly(index string) string {
+	return `index(` + index + `)`
+}
+
+// 拼接唯一索引
+func uniqueIndexAssembly(index string) string {
+	return `unique(` + index + `)`
+}
+
+// 拼接全文索引
+func fulltextIndexAssembly(index string) string {
+	return `fulltext(` + index + `)`
+}
+
+// 添加组合索引
+func combineIndexAssembly(columns []string) string {
+	return `index(` + strings.Join(columns, ",") + `)`
+}
+
 // 将列拼接成语句
 func columnAssembly(column *MysqlColumn) string {
 	var sql string
 
 	switch column.columnType {
 	case TypeIncrements:
-		sql = column.name + ` INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT `
+		sql = column.name + ` INT(` + strconv.Itoa(column.length) + `) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT `
 	case TypeString:
 		// name varchar(11) not null default "dd"
 		sql = column.name + ` varchar(` + strconv.Itoa(column.length) + `)`
@@ -176,7 +254,6 @@ func columnAssembly(column *MysqlColumn) string {
 			sql += " default " + column.defaultValue
 		}
 	}
-
 	// 添加comment
 	if column.comment != "" {
 		sql += ` comment "` + column.comment + `"`

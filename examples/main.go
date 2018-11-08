@@ -23,10 +23,25 @@ func main() {
 	//res, err := c.Schema().CreateDatabaseIfNotExists("test")
 
 	// 创建表
-	err := c.Schema().CreateTable("test", func(table db.IBlueprint) {
-		table.Increments("id").Comment("自增id")
-		table.String("name").Comment("姓名")
-		table.Integer("age").Nullable().Comment("年龄")
+	//err := c.Schema().CreateTable("test", func(table db.IBlueprint) {
+	//	table.Increments("id").Comment("自增id")
+	//	table.String("name").Comment("姓名")
+	//	table.Integer("age").Nullable().Comment("年龄")
+	//})
+
+	err := c.Schema().CreateTableIfNotExist("test23", func(table db.IBlueprint) {
+		table.Integer("user_id").Comment("自增id")
+		table.String("name").Default("silsuer").Comment("姓名")
+		table.Integer("age").Comment("年龄")
+
+		// 添加普通索引  _index
+		//table.Index("user_id")
+		// 添加唯一索引  _unique_index
+		//table.UniqueIndex("user_id")
+		// 添加聚合索引  column1_column2_index
+		//table.Index("user_id","name")
+		// 添加全文索引
+		table.FullTextIndex("user_id")
 	})
 
 	fmt.Println(err)

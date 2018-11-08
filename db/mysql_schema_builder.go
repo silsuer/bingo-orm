@@ -106,9 +106,15 @@ func (ms *MysqlSchemaBuilder) CreateTableIfNotExist(tableName string, call func(
 	call(schema)
 	// 将schema拼接成sql语句
 	// 调用完成，可以开始拼接数据了
-	//var sql string
-	fmt.Println(schema)
+	sql := Assembly(CreateIfNotExists, schema)
+	fmt.Println(sql)
 	return nil
+	stmt, err := ms.GetConn().Prepare(sql)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec()
+	return err
 }
 
 func (ms *MysqlSchemaBuilder) CreateTable(tableName string, call func(table IBlueprint)) error {
