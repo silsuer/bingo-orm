@@ -1,8 +1,8 @@
 package db
 
 type MysqlBuilder struct {
-	connector      *Connector
-	Builder
+	connector      *IConnector
+	Builder                            // 塞入一个构建器
 	bindings       map[string][]string // 绑定的操作符与列名之间的映射
 	columns        []string            // 列名()
 	distinct       bool                // 是否用到了去重查询
@@ -20,4 +20,13 @@ type MysqlBuilder struct {
 	unionOffset    string
 	unionOrders    string
 	lock           bool
+}
+
+func NewMysqlBuilder() IBuilder {
+	return &MysqlBuilder{}
+}
+
+func (m *MysqlBuilder) Table(tableName string) IBuilder {
+	m.from = tableName
+	return m
 }
