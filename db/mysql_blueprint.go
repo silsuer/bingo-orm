@@ -6,9 +6,38 @@ import (
 )
 
 const (
-	TypeIncrements           = "increments"
+	//TypeIncrements           = "int"
+	//TypeBigIncrements        = "bigint"
 	TypeInteger              = "int"
+	TypeBigInteger           = "bigint"
 	TypeString               = "varchar"
+	TypeChar                 = "char"
+	TypeBlob                 = "blob"
+	TypeBool                 = "boolean"
+	TypeDate                 = "date"
+	TypeDateTime             = "datetime"
+	TypeTimestamp            = "timestamp"
+	TypeTime                 = "time"
+	TypeDecimal              = "decimal"
+	TypeDouble               = "double"
+	TypeFloat                = "float"
+	TypeGeometry             = "geometry"
+	TypeGeometryCollection   = "geometrycollection"
+	TypeJson                 = "json"
+	TypeLineString           = "linestring"
+	TypeLongText             = "longtext"
+	TypeMediumInteger        = "mediumint"
+	TypeTinyInteger          = "tinyint"
+	TypeSmallInteger         = "smallint"
+	TypeEnum                 = "enum"
+	TypeMediumText           = "mediumtext"
+	TypeText                 = "text"
+	TypeMultiLineString      = "multilinestring"
+	TypeMultiPoint           = "multipoint"
+	TypeMultiPolygon         = "multipolygon"
+	TypePoint                = "point"
+	TypePolygon              = "polygon"
+	TypeYear                 = "year"
 	TypeStringDefaultLength  = 255
 	TypeIntegerDefaultLength = 11
 
@@ -32,28 +61,346 @@ type MysqlBlueprint struct {
 }
 
 type MysqlColumn struct {
-	name         string // 列名
-	columnType   string // 列类型
-	defaultValue string // 默认值
-	comment      string // 备注
-	nullable     bool   // 是否允许为null
-	length       int    // 列的长度
+	name          string // 列名
+	columnType    string // 列类型
+	defaultValue  string // 默认值
+	defaultType   bool   // 默认值的类型 , true 是int，false是字符串
+	comment       string // 备注
+	nullable      bool   // 是否允许为null
+	length        int    // 列的长度
+	unsigned      bool   // 是否有符号
+	autoIncrement bool   // 是否自增
 }
 
-func NewColumn(name string) *MysqlColumn {
+func NewColumn(mb *MysqlBlueprint, name string) *MysqlColumn {
 	c := new(MysqlColumn)
 	c.nullable = false
 	c.name = name
+	c.unsigned = false // 默认都是有符号的
+	c.autoIncrement = false
+	c.defaultType = false // 默认值是 字符串
+	mb.columns = append(mb.columns, c)
+	mb.currentCol = c
 	return c
 }
 
-func (mb *MysqlBlueprint) Increments(columnName string) IBlueprint {
+func checkLength(length []int) {
+	if len(length) > 1 {
+		panic("too many arguments in String() function")
+	}
+}
+
+func (mb *MysqlBlueprint) Binary(columnName string) IBlueprint {
+	// 建立一个 blob类型的字段
+	column := NewColumn(mb, columnName)
+	column.columnType = TypeBlob
+	return mb
+}
+
+func (mb *MysqlBlueprint) Increments(columnName string, length ...int) IBlueprint {
+
+	checkLength(length)
+
 	// 创建一个列
-	column := NewColumn(columnName)
+	column := NewColumn(mb, columnName)
 	column.length = TypeIntegerDefaultLength
-	column.columnType = TypeIncrements
-	mb.columns = append(mb.columns, column)
-	mb.currentCol = column // 设置当前的列名
+
+	if len(length) == 1 {
+		column.length = length[0]
+	}
+
+	column.columnType = TypeInteger
+	column.autoIncrement = true // 自动递增
+	column.unsigned = true      // 无符号
+	column.defaultType = true   // 默认值改成 数字
+	mb.PrimaryKey(columnName)   // 设置主键
+	//mb.columns = append(mb.columns, column)
+	//mb.currentCol = column // 设置当前的列名
+	return mb
+}
+
+// 使用 int 10 存储 ip地址，使用 inet_ntoa() 将数字转成ip地址，使用 inet_aton() 将ip地址字符串转成数字
+func (mb *MysqlBlueprint) IpAddress(columnName string) IBlueprint {
+	return mb.Integer(columnName, 10)
+}
+
+func (mb *MysqlBlueprint) LineString(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeLineString
+	return mb
+}
+
+func (mb *MysqlBlueprint) LongText(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeLongText
+	return mb
+}
+
+//func (mb *MysqlBlueprint) Float(columnName string, lengthPrecision ...int) IBlueprint {
+//   
+//}
+
+func (mb *MysqlBlueprint) Enum(columnName string, enum ...string) IBlueprint {
+	// name enum('a','b')
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeEnum
+
+	var tmpSlice []string
+	for k := range enum {
+		tmpSlice = append(tmpSlice, `"`+enum[k]+`"`)
+	}
+	c.columnType += `(` + strings.Join(tmpSlice, ",") + `)`
+	return mb
+}
+
+func (mb *MysqlBlueprint) MediumInteger(columnName string, length ...int) IBlueprint {
+	checkLength(length)
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeMediumInteger
+	c.defaultValue = strconv.Itoa(TypeIntegerDefaultLength)
+	c.defaultType = true
+	if len(length) == 1 {
+		c.length = length[0]
+	}
+
+	return mb
+}
+
+func (mb *MysqlBlueprint) MediumIncrements(columnName string, length ...int) IBlueprint {
+	checkLength(length)
+
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeMediumInteger
+	c.defaultType = true
+	c.unsigned = true
+	c.autoIncrement = true
+	c.length = TypeIntegerDefaultLength
+
+	if len(length) == 1 {
+		c.length = length[0]
+	}
+
+	mb.PrimaryKey(columnName)
+	return mb
+}
+
+// 存储json字符串
+func (mb *MysqlBlueprint) Json(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeJson
+	return mb
+}
+
+func (mb *MysqlBlueprint) GeometryCollection(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeGeometryCollection
+	return mb
+}
+
+func (mb *MysqlBlueprint) Geometry(columnName string) IBlueprint {
+	column := NewColumn(mb, columnName)
+	column.columnType = TypeGeometry
+	return mb
+}
+
+func (mb *MysqlBlueprint) Float(columnName string, lengthPrecision ...int) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeFloat
+	switch len(lengthPrecision) {
+	case 0:
+	case 2:
+		c.columnType += `(` + strconv.Itoa(lengthPrecision[0]) + `,` + strconv.Itoa(lengthPrecision[1]) + `)`
+	default:
+		panic("wrong arguments number in Float() function. need 2 arguments: length and precision.")
+	}
+
+	return mb
+}
+
+func (mb *MysqlBlueprint) MediumText(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeMediumText
+	return mb
+}
+
+// multilinestring
+func (mb *MysqlBlueprint) MultiLineString(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeMultiLineString
+	return mb
+}
+
+func (mb *MysqlBlueprint) MultiPoint(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeMultiPoint
+	return mb
+}
+
+func (mb *MysqlBlueprint) Timestamp(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeTimestamp
+	return mb
+}
+
+func (mb *MysqlBlueprint) TinyIncrements(columnName string, length ...int) IBlueprint {
+	mb.TinyInteger(columnName, length...)
+	mb.PrimaryKey(columnName)
+	mb.currentCol.unsigned = true
+	mb.currentCol.autoIncrement = true
+	return mb
+}
+
+func (mb *MysqlBlueprint) Polygon(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypePolygon
+	return mb
+}
+
+func (mb *MysqlBlueprint) SmallInteger(columnName string, length ...int) IBlueprint {
+
+	checkLength(length)
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeSmallInteger
+	c.defaultType = true
+	if len(length) == 1 {
+		c.length = length[0]
+	}
+	return mb
+}
+
+func (mb *MysqlBlueprint) UnsignedInteger(columnName string, length ...int) IBlueprint {
+	mb.Integer(columnName, length...)
+	mb.currentCol.unsigned = true
+	return mb
+}
+
+func (mb *MysqlBlueprint) UnsignedTinyInteger(columnName string, length ...int) IBlueprint {
+	mb.TinyInteger(columnName, length...)
+	mb.currentCol.unsigned = true
+	return mb
+}
+
+func (mb *MysqlBlueprint) Year(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeYear
+	return mb
+}
+
+//func (mb *MysqlBlueprint) Uuid(columnName string) IBlueprint {
+//	mb.String(columnName, 36).Default("uuid()")
+//	return mb
+//}
+
+func (mb *MysqlBlueprint) UnsignedSmallInteger(columnName string, length ...int) IBlueprint {
+	mb.SmallInteger(columnName, length...)
+	mb.currentCol.unsigned = true
+	return mb
+}
+
+func (mb *MysqlBlueprint) UnsignedMediumInteger(columnName string, length ...int) IBlueprint {
+	mb.MediumInteger(columnName, length...)
+	mb.currentCol.unsigned = true
+	return mb
+}
+
+func (mb *MysqlBlueprint) UnsignedDecimal(columnName string, length int, precision int) IBlueprint {
+	mb.Decimal(columnName, length, precision)
+	mb.currentCol.unsigned = true
+	return mb
+}
+
+func (mb *MysqlBlueprint) Text(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeText
+	return mb
+}
+
+func (mb *MysqlBlueprint) Time(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeTime
+	return mb
+}
+
+func (mb *MysqlBlueprint) UnsignedBigInteger(columnName string, length ...int) IBlueprint {
+	mb.BigInteger(columnName, length...)
+	mb.currentCol.unsigned = true
+	return mb
+}
+
+func (mb *MysqlBlueprint) SoftDeletes() IBlueprint {
+	mb.Timestamp("deleted_at").Nullable()
+	return mb
+}
+
+func (mb *MysqlBlueprint) SmallIncrements(columnName string, length ...int) IBlueprint {
+	mb.SmallInteger(columnName, length...)
+	mb.currentCol.autoIncrement = true
+	mb.currentCol.unsigned = true
+	return mb
+}
+
+func (mb *MysqlBlueprint) RememberToken() IBlueprint {
+	mb.String("remember_token", 100).Nullable()
+	return mb
+}
+
+func (mb *MysqlBlueprint) Point(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypePoint
+	return mb
+}
+
+func (mb *MysqlBlueprint) TinyInteger(columnName string, length ...int) IBlueprint {
+
+	checkLength(length)
+
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeTinyInteger
+	c.defaultType = true
+
+	if len(length) == 1 {
+		c.length = length[0]
+	}
+
+	return mb
+}
+
+// 自动创建 created_at updated_at
+func (mb *MysqlBlueprint) Timestamps() IBlueprint {
+	mb.NullableTimestamp("created_at")
+	mb.NullableTimestamp("updated_at")
+	return mb
+}
+
+func (mb *MysqlBlueprint) NullableTimestamp(columnName string) IBlueprint {
+	mb.Timestamp(columnName).Nullable()
+	return mb
+}
+
+func (mb *MysqlBlueprint) MultiPolygon(columnName string) IBlueprint {
+	c := NewColumn(mb, columnName)
+	c.columnType = TypeMultiPolygon
+	return mb
+}
+
+func (mb *MysqlBlueprint) Double(columnName string, lengthPrecision ...int) IBlueprint {
+	column := NewColumn(mb, columnName)
+	column.columnType = TypeDouble
+
+	switch len(lengthPrecision) {
+	case 0:
+	case 2:
+		column.columnType += `(` + strconv.Itoa(lengthPrecision[0]) + `,` + strconv.Itoa(lengthPrecision[1]) + `)`
+	default:
+		panic("wrong arguments number in Double() function. need 2 arguments: length and precision.")
+	}
+
+	return mb
+}
+
+func (mb *MysqlBlueprint) Decimal(columnName string, length int, precision int) IBlueprint {
+	column := NewColumn(mb, columnName)
+	column.columnType = TypeDecimal + `(` + strconv.Itoa(length) + `,` + strconv.Itoa(precision) + `)`
 	return mb
 }
 
@@ -68,46 +415,84 @@ func (mb *MysqlBlueprint) Comment(comment string) IBlueprint {
 }
 
 func (mb *MysqlBlueprint) Default(def interface{}) IBlueprint {
-	switch def.(type) {
-	case int:
-		if mb.currentCol.columnType == TypeInteger {
-			mb.currentCol.defaultValue = strconv.Itoa(def.(int))
+	if mb.currentCol.defaultType { // 需要 int 型默认值
+		if v, ok := def.(int); ok {
+			mb.currentCol.defaultValue = strconv.Itoa(v)
 		} else {
-			panic("the default value of column " + mb.currentCol.name + " need " + TypeInteger)
+			panic("wrong default value type (need int) : column " + mb.currentCol.name)
 		}
-	case string:
-		mb.currentCol.defaultValue = def.(string)
-	default:
-		panic("wrong default value type : column " + mb.currentCol.name)
+	} else {
+		// 需要 字符串型 默认值
+		if v, ok := def.(string); ok {
+			mb.currentCol.defaultValue = v
+		} else {
+			panic("wrong default value type (need string) : column " + mb.currentCol.name)
+		}
 	}
+
 	return mb
 }
 
-func (mb *MysqlBlueprint) String(columnName string) IBlueprint {
-	column := NewColumn(columnName)
+func (mb *MysqlBlueprint) String(columnName string, length ...int) IBlueprint {
+
+	checkLength(length)
+
+	column := NewColumn(mb, columnName)
 	column.length = TypeStringDefaultLength
+
+	if len(length) == 1 {
+		column.length = length[0]
+	}
+
 	// 字符串类型
 	column.columnType = TypeString
-	mb.columns = append(mb.columns, column)
-	mb.currentCol = column
+	//mb.columns = append(mb.columns, column)
+	//mb.currentCol = column
 	return mb
 }
 
-func (mb *MysqlBlueprint) StringWithLength(columnName string, length int) IBlueprint {
-	column := NewColumn(columnName)
-	column.length = length
-	column.columnType = TypeString
-	mb.columns = append(mb.columns, column)
-	mb.currentCol = column
+func (mb *MysqlBlueprint) Boolean(columnName string) IBlueprint {
+	// 建立一个bool类型的字段
+	column := NewColumn(mb, columnName)
+	column.columnType = TypeBool
+	column.defaultType = true // 默认值是int型
 	return mb
 }
 
-func (mb *MysqlBlueprint) Integer(columnName string) IBlueprint {
-	column := NewColumn(columnName)
+func (mb *MysqlBlueprint) DateTime(columnName string) IBlueprint {
+	column := NewColumn(mb, columnName)
+	column.columnType = TypeDateTime
+	return mb
+}
+
+func (mb *MysqlBlueprint) Date(columnName string) IBlueprint {
+	column := NewColumn(mb, columnName)
+	column.columnType = TypeDate
+	return mb
+}
+
+func (mb *MysqlBlueprint) Char(columnName string, length int) IBlueprint {
+	column := NewColumn(mb, columnName)
+	column.columnType = TypeChar
+	return nil
+}
+
+func (mb *MysqlBlueprint) Integer(columnName string, length ...int) IBlueprint {
+	if len(length) > 1 {
+		panic("too many arguments in Integer() function.")
+	}
+
+	column := NewColumn(mb, columnName)
+	column.defaultType = true
 	column.length = TypeIntegerDefaultLength
+
+	if len(length) == 1 {
+		column.length = length[0]
+	}
+
 	column.columnType = TypeInteger
-	mb.columns = append(mb.columns, column)
-	mb.currentCol = column
+	//mb.columns = append(mb.columns, column)
+	//mb.currentCol = column
 	return mb
 }
 
@@ -117,11 +502,11 @@ func (mb *MysqlBlueprint) Charset(charset string) IBlueprint {
 }
 
 func (mb *MysqlBlueprint) IntegerWithLength(columnName string, length int) IBlueprint {
-	column := NewColumn(columnName)
+	column := NewColumn(mb, columnName)
 	column.length = length
 	column.columnType = TypeInteger
-	mb.columns = append(mb.columns, column)
-	mb.currentCol = column
+	//mb.columns = append(mb.columns, column)
+	//mb.currentCol = column
 	return mb
 }
 
@@ -148,6 +533,40 @@ func (mb *MysqlBlueprint) UniqueIndex(column string) {
 // 全文索引
 func (mb *MysqlBlueprint) FullTextIndex(column string) {
 	mb.fulltextIndexList = append(mb.fulltextIndexList, column)
+}
+
+func (mb *MysqlBlueprint) BigInteger(columnName string, length ...int) IBlueprint {
+	checkLength(length)
+
+	column := NewColumn(mb, columnName)
+	column.columnType = TypeBigInteger
+	column.defaultType = true
+	if len(length) == 1 {
+		column.defaultValue = strconv.Itoa(length[0])
+	}
+	//mb.columns = append(mb.columns, column)
+	//mb.currentCol = column
+	return mb
+}
+
+// 自增id 相当于 unsigned big integer
+func (mb *MysqlBlueprint) BigIncreaments(columnName string, length ...int) IBlueprint {
+
+	checkLength(length)
+
+	column := NewColumn(mb, columnName)
+	column.columnType = TypeBigInteger
+	column.defaultType = true
+	column.autoIncrement = true
+	column.unsigned = true
+	if len(length) == 1 {
+		column.length = length[0]
+	}
+
+	//mb.columns = append(mb.columns, column)
+	//mb.currentCol = column
+	mb.PrimaryKey(columnName) // 设为主键
+	return mb
 }
 
 func (mb *MysqlBlueprint) PrimaryKey(column string) {
@@ -231,33 +650,48 @@ func combineIndexAssembly(columns []string) string {
 func columnAssembly(column *MysqlColumn) string {
 	var sql string
 
-	switch column.columnType {
-	case TypeIncrements:
-		sql = column.name + ` INT(` + strconv.Itoa(column.length) + `) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT `
-	case TypeString:
-		// name varchar(11) not null default "dd"
-		sql = column.name + ` varchar(` + strconv.Itoa(column.length) + `)`
-		if !column.nullable {
-			sql += " not null "
-		}
-		if column.defaultValue != "" {
-			// 默认值
-			sql += " default \"" + column.defaultValue + "\""
-		}
-	case TypeInteger:
-		// age int(11) not null default 0
-		sql = column.name + ` int(` + strconv.Itoa(column.length) + `)`
-		if !column.nullable {
-			sql += " not null "
-		}
-		if column.defaultValue != "" {
-			sql += " default " + column.defaultValue
+	// 列名 类型 （长度） 是否有符号 是否为空 是否自动递增 默认值 备注
+
+	// 拼名称
+	sql = column.name
+
+	// 拼类型
+	sql += ` ` + column.columnType
+
+	// 拼类型长度
+	if column.length != 0 {
+		sql += ` (` + strconv.Itoa(column.length) + `) `
+	}
+
+	// 拼接是否有符号
+	if column.unsigned { // 无符号
+		sql += ` unsigned `
+	}
+
+	// 拼接是否允许为空
+	if !column.nullable {
+		sql += ` not null `
+	}
+
+	// 拼接自动递增
+	if column.autoIncrement {
+		sql += ` auto_increment `
+	}
+
+	// 拼接默认值
+	if column.defaultValue != "" {
+		// 拼接
+		sql += ` default `
+		if column.defaultType {
+			sql += column.defaultValue
+		} else {
+			sql += `"` + column.defaultValue + `"`
 		}
 	}
-	// 添加comment
+
+	// 拼接备注
 	if column.comment != "" {
 		sql += ` comment "` + column.comment + `"`
 	}
-
 	return sql
 }

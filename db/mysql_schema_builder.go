@@ -4,7 +4,6 @@ import (
 	"errors"
 	"strings"
 	"database/sql"
-	"fmt"
 )
 
 type MysqlSchemaBuilder struct {
@@ -107,8 +106,6 @@ func (ms *MysqlSchemaBuilder) CreateTableIfNotExist(tableName string, call func(
 	// 将schema拼接成sql语句
 	// 调用完成，可以开始拼接数据了
 	sql := Assembly(CreateIfNotExists, schema)
-	fmt.Println(sql)
-	return nil
 	stmt, err := ms.GetConn().Prepare(sql)
 	if err != nil {
 		return err
@@ -124,6 +121,7 @@ func (ms *MysqlSchemaBuilder) CreateTable(tableName string, call func(table IBlu
 	call(schema)
 	sql := Assembly(CreateDefaultType, schema) // 拼装成语句
 	//fmt.Println(sql)
+	//return nil
 	stmt, err := ms.GetConn().Prepare(sql)
 	if err != nil {
 		return err

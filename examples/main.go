@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/silsuer/bingo-orm/db"
 	"fmt"
+	"github.com/silsuer/bingo-orm/db"
 )
 
 func main() {
@@ -29,11 +29,17 @@ func main() {
 	//	table.Integer("age").Nullable().Comment("年龄")
 	//})
 
-	err := c.Schema().CreateTableIfNotExist("test23", func(table db.IBlueprint) {
+	err := c.Schema().CreateTable("test11", func(table db.IBlueprint) {
 		table.Integer("user_id").Comment("自增id")
 		table.String("name").Default("silsuer").Comment("姓名")
 		table.Integer("age").Comment("年龄")
-
+		//table.MediumIncrements("id")
+		table.Binary("asd")
+		table.Decimal("deasc", 8, 2)
+		table.Json("aaa")
+		table.Enum("enum_col", "d", "a", "b")
+		//table.String("aaa",199).Comment("测试列")
+		//table.Integer("ddd",9).Comment("aaa")
 		// 添加普通索引  _index
 		//table.Index("user_id")
 		// 添加唯一索引  _unique_index
@@ -41,7 +47,7 @@ func main() {
 		// 添加聚合索引  column1_column2_index
 		//table.Index("user_id","name")
 		// 添加全文索引
-		table.FullTextIndex("user_id")
+		//table.FullTextIndex("user_id")
 	})
 
 	fmt.Println(err)

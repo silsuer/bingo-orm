@@ -67,9 +67,21 @@ bingo-orm 是 [bingo](https://github.com/silsuer/bingo) 框架下的一个子模
   
 ## 接下来的任务
   - 创建表可以添加各种类型的字段（float double 等）
+  - 实现多态（暂时不实现）
   - 更改表结构
   - 对表进行增删改
   - 重新组织结果集
   - 对表进行查询(内连接 外连接 子表)
   - mysql事务处理
   - 添加模型处理（对模型增加观察者，模型与db进行关联，底层使用db进行操作）
+  
+## 知识点
+   
+   mysql的各种类型
+   mysql的索引
+   mysql的各种连接
+   
+   https://blog.csdn.net/gxy_2016/article/details/53436865  日期类型的区别
+   https://blog.csdn.net/MinjerZhang/article/details/78137795 mysql 地理位置
+   http://www.cnblogs.com/cnsanshao/p/3326648.html  数字和ip地址相互转换
+   https://blog.csdn.net/zzc_zcc/article/details/78836505 类型
