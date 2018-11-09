@@ -73,4 +73,3 @@ bingo-orm 是 [bingo](https://github.com/silsuer/bingo) 框架下的一个子模
   - 对表进行查询(内连接 外连接 子表)
   - mysql事务处理
   - 添加模型处理（对模型增加观察者，模型与db进行关联，底层使用db进行操作）
-  
