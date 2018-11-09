@@ -6,8 +6,6 @@ import (
 )
 
 const (
-	//TypeIncrements           = "int"
-	//TypeBigIncrements        = "bigint"
 	TypeInteger              = "int"
 	TypeBigInteger           = "bigint"
 	TypeString               = "varchar"
@@ -137,7 +135,7 @@ func (mb *MysqlBlueprint) LongText(columnName string) IBlueprint {
 }
 
 //func (mb *MysqlBlueprint) Float(columnName string, lengthPrecision ...int) IBlueprint {
-//   
+//
 //}
 
 func (mb *MysqlBlueprint) Enum(columnName string, enum ...string) IBlueprint {
