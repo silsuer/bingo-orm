@@ -41,6 +41,13 @@ const (
 
 	CreateDefaultType = iota
 	CreateIfNotExists
+	AlterTable
+	CreateTable
+	DropTable
+	ChangeColumn
+	DropColumn
+	AddColumn
+	RenameColumn
 )
 
 // mysql实现 blueprint
@@ -56,24 +63,28 @@ type MysqlBlueprint struct {
 	uniqueIndexList   []string   // 唯一索引
 	fulltextIndexList []string   // 全文索引
 	primaryKey        string     // 主键索引
+	operator          int        // 操作类型，是创建表还是更改表结构
 }
 
 type MysqlColumn struct {
-	name          string // 列名
-	columnType    string // 列类型
-	defaultValue  string // 默认值
-	defaultType   bool   // 默认值的类型 , true 是int，false是字符串
-	comment       string // 备注
-	nullable      bool   // 是否允许为null
-	length        int    // 列的长度
-	unsigned      bool   // 是否有符号
-	autoIncrement bool   // 是否自增
+	name             string // 列名
+	columnType       string // 列类型
+	defaultValue     string // 默认值
+	defaultType      bool   // 默认值的类型 , true 是int，false是字符串
+	comment          string // 备注
+	nullable         bool   // 是否允许为null
+	length           int    // 列的长度
+	unsigned         bool   // 是否有符号
+	autoIncrement    bool   // 是否自增
+	originColumnName string // 原列名（只在重命名列时用到）
+	operator         int    // 列操作符
 }
 
 func NewColumn(mb *MysqlBlueprint, name string) *MysqlColumn {
 	c := new(MysqlColumn)
 	c.nullable = false
 	c.name = name
+	c.operator = AddColumn
 	c.unsigned = false // 默认都是有符号的
 	c.autoIncrement = false
 	c.defaultType = false // 默认值是 字符串
@@ -310,6 +321,24 @@ func (mb *MysqlBlueprint) UnsignedDecimal(columnName string, length int, precisi
 func (mb *MysqlBlueprint) Text(columnName string) IBlueprint {
 	c := NewColumn(mb, columnName)
 	c.columnType = TypeText
+	return mb
+}
+
+// 删除当前列
+func (mb *MysqlBlueprint) Drop() IBlueprint {
+	mb.currentCol.operator = DropColumn
+	return mb
+}
+
+func (mb *MysqlBlueprint) Change() IBlueprint {
+	mb.currentCol.operator = ChangeColumn
+	return mb
+}
+
+// 重命名列
+func (mb *MysqlBlueprint) RenameColumn(originColumn string) IBlueprint {
+	mb.currentCol.operator = RenameColumn
+	mb.currentCol.originColumnName = originColumn // 原列名
 	return mb
 }
 
@@ -569,6 +598,25 @@ func (mb *MysqlBlueprint) BigIncreaments(columnName string, length ...int) IBlue
 
 func (mb *MysqlBlueprint) PrimaryKey(column string) {
 	mb.primaryKey = column
+}
+
+// 修改表结构的方法
+func alterAssembly(schema *MysqlBlueprint) []string {
+	var sql []string
+	for k := range schema.columns {
+		switch schema.columns[k].operator {
+		case AddColumn:
+			sql = append(sql, `alter table `+schema.name+` add `+columnAssembly(schema.columns[k]))
+		case ChangeColumn:
+			sql = append(sql, `alter table `+schema.name+` modify `+columnAssembly(schema.columns[k]))
+		case DropColumn:
+			sql = append(sql, `alter table `+schema.name+` drop `+schema.columns[k].name)
+		case RenameColumn:
+			sql = append(sql, `alter table `+schema.name+` change `+schema.columns[k].originColumnName+` `+columnAssembly(schema.columns[k]))
+		}
+	}
+
+	return sql
 }
 
 // 将表结构拼装成sql语句

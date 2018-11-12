@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/silsuer/bingo-orm/db"
 )
 
@@ -29,28 +28,45 @@ func main() {
 	//	table.Integer("age").Nullable().Comment("年龄")
 	//})
 
-	err := c.Schema().CreateTable("test11", func(table db.IBlueprint) {
-		table.Integer("user_id").Comment("自增id")
-		table.String("name").Default("silsuer").Comment("姓名")
-		table.Integer("age").Comment("年龄")
-		//table.MediumIncrements("id")
-		table.Binary("asd")
-		table.Decimal("deasc", 8, 2)
-		table.Json("aaa")
-		table.Enum("enum_col", "d", "a", "b")
-		//table.String("aaa",199).Comment("测试列")
-		//table.Integer("ddd",9).Comment("aaa")
-		// 添加普通索引  _index
-		//table.Index("user_id")
-		// 添加唯一索引  _unique_index
-		//table.UniqueIndex("user_id")
-		// 添加聚合索引  column1_column2_index
-		//table.Index("user_id","name")
-		// 添加全文索引
-		//table.FullTextIndex("user_id")
-	})
+	// 修改表结构
+	//err := c.Schema().Table("test", func(table db.IBlueprint) {
+	// 添加列
+	//table.String("name").Comment("测试添加一个列")
+	// 修改列
+	//table.String("name", 150).Change()
+	//// 删除列
+	//table.String("nnnn").Drop()
+	// 重命名列
+	//table.RenameColumn("name", "name2")
+	//table.String("nnnn").RenameColumn("name")
+	//})
 
-	fmt.Println(err)
+	//fmt.Println(err)
+	//err := c.Schema().CreateTable("test11", func(table db.IBlueprint) {
+	//	table.Integer("user_id").Comment("自增id")
+	//	table.String("name").Default("silsuer").Comment("姓名")
+	//	table.Integer("age").Comment("年龄")
+	//	//table.MediumIncrements("id")
+	//	table.Binary("asd")
+	//	table.Decimal("deasc", 8, 2)
+	//	table.Json("aaa")
+	//	table.Enum("enum_col", "d", "a", "b")
+	//table.String("aaa",199).Comment("测试列")
+	//table.Integer("ddd",9).Comment("aaa")
+	// 添加普通索引  _index
+	//table.Index("user_id")
+	// 添加唯一索引  _unique_index
+	//table.UniqueIndex("user_id")
+	// 添加聚合索引  column1_column2_index
+	//table.Index("user_id","name")
+	// 添加全文索引
+	//table.FullTextIndex("user_id")
+	//})
+
+	// 更改表结构
+	c.Schema()
+
+	//fmt.Println(err)
 	//fmt.Println(res)
 	//query, err := s.Query("select * from users") // Query用作搜索，Exec用来增删改
 	//if err != nil {

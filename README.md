@@ -66,7 +66,7 @@ bingo-orm 是 [bingo](https://github.com/silsuer/bingo) 框架下的一个子模
   ```
   
 ## 接下来的任务
-  - 创建表可以添加各种类型的字段（float double 等）
+  - [x] 创建表可以添加各种类型的字段（float double 等）  
   - 实现多态（暂时不实现）
   - 更改表结构
   - 对表进行增删改

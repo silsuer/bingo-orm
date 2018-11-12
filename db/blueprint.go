@@ -57,10 +57,27 @@ type IBlueprint interface {
 	UniqueIndex(column string)         // 唯一索引
 	FullTextIndex(column string)       // 全文索引
 	PrimaryKey(column string)          // 主键索引
+
+	Drop() IBlueprint                            // 删除列
+	Change() IBlueprint                          // 修改列
+	RenameColumn(originColumn string) IBlueprint // 重命名列
 }
 
 // 表格的插入语句
 type Blueprint struct {
+}
+
+// 重命名列
+func (bp *Blueprint) RenameColumn(originColumn string) IBlueprint {
+	return nil
+}
+
+func (bp *Blueprint) Drop() IBlueprint {
+	return nil
+}
+
+func (bp *Blueprint) Change() IBlueprint {
+	return nil
 }
 
 func (bp *Blueprint) Year(columnName string) IBlueprint {

@@ -1,9 +1,9 @@
 package db
 
 import (
+	"database/sql"
 	"errors"
 	"strings"
-	"database/sql"
 )
 
 type MysqlSchemaBuilder struct {
@@ -102,6 +102,7 @@ func (ms *MysqlSchemaBuilder) CreateTableIfNotExist(tableName string, call func(
 	schema := new(MysqlBlueprint)
 	schema.engine = SchemaDefaultEngine // 默认引擎
 	schema.name = tableName
+	schema.operator = CreateTable
 	call(schema)
 	// 将schema拼接成sql语句
 	// 调用完成，可以开始拼接数据了
@@ -114,18 +115,108 @@ func (ms *MysqlSchemaBuilder) CreateTableIfNotExist(tableName string, call func(
 	return err
 }
 
+func (ms *MysqlSchemaBuilder) Transaction(t func(transaction ITransaction) error) error {
+	var err error
+	transaction := new(MysqlTransaction)
+	transaction.SetConn(ms.connector)
+	err = transaction.Begin()
+	if err != nil {
+		return err
+	}
+	err = t(transaction)
+	if err != nil {
+		return err
+	}
+	err = transaction.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (ms *MysqlSchemaBuilder) CreateTable(tableName string, call func(table IBlueprint)) error {
 	schema := new(MysqlBlueprint)
 	schema.engine = SchemaDefaultEngine
 	schema.name = tableName
+	schema.operator = AlterTable
 	call(schema)
-	sql := Assembly(CreateDefaultType, schema) // 拼装成语句
+
+	s := Assembly(CreateDefaultType, schema) // 拼装成语句
 	//fmt.Println(sql)
 	//return nil
-	stmt, err := ms.GetConn().Prepare(sql)
+	stmt, err := ms.GetConn().Prepare(s)
 	if err != nil {
 		return err
 	}
 	_, err = stmt.Exec()
+	return err
+}
+
+// mysql事务处理
+type MysqlTransaction struct {
+	Transaction
+	connector IConnector
+}
+
+func (mt *MysqlTransaction) SetConn(connector IConnector) {
+	mt.connector = connector
+}
+
+func (mt *MysqlTransaction) GetConn() IConnector {
+	return mt.connector
+}
+
+// 开启事务
+func (mt *MysqlTransaction) Begin() error {
+	_, err := mt.GetConn().GetConn().Exec(`START TRANSACTION`)
+	return err
+}
+
+func (mt *MysqlTransaction) Commit() error {
+	_, err := mt.GetConn().GetConn().Exec(`COMMIT`)
+	return err
+}
+
+func (mt *MysqlTransaction) Rollback() error {
+	stmt, err := mt.GetConn().GetConn().Prepare(`ROLLBACK`)
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec()
+	return err
+}
+
+func (ms *MysqlSchemaBuilder) Table(tableName string, call func(table IBlueprint)) error {
+
+	schema := new(MysqlBlueprint)
+	schema.name = tableName
+	schema.operator = AlterTable
+	call(schema)
+	// 拼接出sql数组 每一项都是一条sql语句,遍历并执行sql
+	// 更改表结构的方法，返回拼接之后的数据
+	s := alterAssembly(schema)
+
+	var err error
+
+	// 开启一个事务，事务执行失败将会全部回滚
+	err = ms.Transaction(func(transaction ITransaction) error {
+		for k := range s {
+			// 遍历执行方法
+			stmt, err := ms.GetConn().Prepare(s[k])
+
+			if err != nil {
+				return err
+			}
+
+			_, err = stmt.Exec()
+
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
 	return err
 }

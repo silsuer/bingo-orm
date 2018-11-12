@@ -16,6 +16,7 @@ type IBuilder interface {
 type ISchemaBuilder interface {
 	SetConn(connector IConnector) ISchemaBuilder
 	GetConn() *sql.DB
+
 	// 创建数据库
 	CreateDatabase(args ...string) (sql.Result, error)
 	CreateDatabaseIfNotExists(args ...string) (sql.Result, error)
@@ -30,10 +31,53 @@ type ISchemaBuilder interface {
 	TruncateDatabase(databaseName string) error
 	// 清空数据表
 	TruncateTable(tableName string) error
+
+	// 更改表结构
+	Table(tableName string, call func(table IBlueprint)) error
+	Transaction(t func(transaction ITransaction) error) error // 事务处理
+}
+
+type ITransaction interface {
+	SetConn(connector IConnector)
+	GetConn() IConnector
+	Begin() error
+	Rollback() error
+	Commit() error
+}
+
+type Transaction struct {
+}
+
+func (t *Transaction) GetConn() IConnector {
+	return nil
+}
+
+func (t *Transaction) SetConn(connector IConnector) {
+
+}
+
+func (t *Transaction) Begin() error {
+	return nil
+}
+
+func (t *Transaction) Commit() error {
+	return nil
+}
+
+func (t *Transaction) Rollback() error {
+	return nil
 }
 
 type SchemaBuilder struct {
 	connector IConnector
+}
+
+func (s *SchemaBuilder) Transaction(t func(transaction ITransaction) error) error {
+	return nil
+}
+
+func (s *SchemaBuilder) Table(tableName string, call func(table IBlueprint)) error {
+	return nil
 }
 
 func (s *SchemaBuilder) CreateTable(tableName string, call func(table IBlueprint)) error {
