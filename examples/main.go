@@ -28,7 +28,7 @@ func main() {
 	//	table.Integer("age").Nullable().Comment("年龄")
 	//})
 
-	// 修改表结构
+	// 修改表结构(这里是通过事务进行的)
 	//err := c.Schema().Table("test", func(table db.IBlueprint) {
 	// 添加列
 	//table.String("name").Comment("测试添加一个列")
