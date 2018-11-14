@@ -1,8 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"github.com/silsuer/bingo-orm/db"
 )
+
+type User struct {
+	Id           int    `json:"user_id",v:"min=2"`
+	StringColumn string `json:"string_column"`
+}
 
 func main() {
 	// 输入数据
@@ -41,7 +47,65 @@ func main() {
 	//table.String("nnnn").RenameColumn("name")
 	//})
 
-	//fmt.Println(err)
+	// 向表中插入数据  InsertMap 使用map  InsertStruct 使用结构体 Insert
+	//a := make(map[string]interface{})
+	//a["user_id"] = 1
+	//a["string_column"] = "aaa"
+	//res := c.Table("test").InsertMap(a)
+	//fmt.Println(res.GetErrors())
+
+	// 使用结构体向表中插入数据
+	//user := &User{Id: 2, StringColumn: "silsuer"}
+	//res := c.Table("test").InsertModel(user)
+	//fmt.Println(res.GetErrors())
+
+	// 使用结构体向表中批量插入数据
+	//a := new(User)
+	//a.Id = 3
+	//a.StringColumn = "silsuer3"
+	//b := new(User)
+	//b.Id = 4
+	//b.StringColumn = "silsuer4"
+	//res := c.Table("test").InsertManyModels([]interface{}{a, b})
+	//fmt.Println(res)
+
+	// 使用map向表中批量插入数据
+	//a := make(map[string]interface{})
+	//a["user_id"] = 1
+	//a["string_column"] = "silsuer1"
+	//b := make(map[string]interface{})
+	//b["user_id"] = 2
+	//b["string_column"] = "silsuer2"
+	//res := c.Table("test").InsertManyMap([]map[string]interface{}{a, b})
+	//fmt.Println(res)
+
+	//a := make(map[string]interface{})
+	//a["user_id"] = 2
+	//a["string_column"] = "silsuer"
+	//更新数据
+	//res := c.Table("test").Where("user_id", 1).UpdateMap(a) // 使用map单个更新
+	//fmt.Println(res.GetErrors())
+
+	// 使用模型单个更新
+	//user := &User{Id: 2, StringColumn: "silsuer"}
+	//res := c.Table("test").Where("user_id", 22222).UpdateModel(user) // 使用模型单个更新
+	//fmt.Println(res.GetErrors())
+
+	// 单独更新某个域
+	//res := c.Table("test").Where("user_id", 2).UpdateField("string_column", "ssss")
+	//fmt.Println(res.GetErrors())
+
+	// 暂时不提供批量更新
+	//res := c.Table("test").Where("user_id",1).ModelManyMap()     // 使用map批量更新
+	//res := c.Table("test").Where("user_id",1).ModelManyModels()  // 使用模型批量更新
+
+	// 删除数据
+	//res := c.Table("test").Where("user_id", 2).Delete()
+	//fmt.Println(res.GetErrors())
+
+	// 查找数据
+	res := c.Table("test").Where("user_id", 1).Get()
+	fmt.Println(res.ToStringMapList())
 	//err := c.Schema().CreateTable("test11", func(table db.IBlueprint) {
 	//	table.Integer("user_id").Comment("自增id")
 	//	table.String("name").Default("silsuer").Comment("姓名")
@@ -64,7 +128,7 @@ func main() {
 	//})
 
 	// 更改表结构
-	c.Schema()
+	//c.Schema()
 
 	//fmt.Println(err)
 	//fmt.Println(res)
@@ -72,14 +136,14 @@ func main() {
 	//if err != nil {
 	//	panic(err)
 	//}
-	////var name string
-	////r.Scan(&name)
-	////fmt.Println(name)
+	//var name string
+	//r.Scan(&name)
+	//fmt.Println(name)
 	//column, _ := query.Columns()
 	//
 	//values := make([][]byte, len(column))     //values是每个列的值，这里获取到byte里
 	//scans := make([]interface{}, len(column)) //因为每次查询出来的列是不定长的，用len(column)定住当次查询的长度
-	//for i := range values { //让每一行数据都填充到[][]byte里面
+	//for i := range values {                   //让每一行数据都填充到[][]byte里面
 	//	scans[i] = &values[i]
 	//}
 	//results := make(map[int]map[string]string) //最后得到的map
@@ -90,7 +154,7 @@ func main() {
 	//		return
 	//	}
 	//	row := make(map[string]string) //每行数据
-	//	for k, v := range values { //每行数据是放在values里面，现在把它挪到row里
+	//	for k, v := range values {     //每行数据是放在values里面，现在把它挪到row里
 	//		key := column[k]
 	//		row[key] = string(v)
 	//	}
