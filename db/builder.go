@@ -7,7 +7,7 @@ import (
 type IBuilder interface {
 	SetConn(connector IConnector) IBuilder
 	GetConn() *sql.DB
-	Distinct(column string) IBuilder         // 去重方法
+	Distinct(columns ...string) IBuilder     // 去重方法
 	Where(condition ...interface{}) IBuilder // 条件语句
 	//WhereCondition(columnName string, f func()) IBuilder // where语句，传入一个回调
 
@@ -241,7 +241,7 @@ func (b *Builder) InsertMap(d map[string]interface{}) IResult {
 	return nil
 }
 
-func (b *Builder) Distinct(column string) IBuilder {
+func (b *Builder) Distinct(columns ...string) IBuilder {
 	return nil
 }
 

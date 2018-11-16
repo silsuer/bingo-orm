@@ -19,26 +19,26 @@ type emptyInterface struct {
 }
 
 type MysqlBuilder struct {
-	connector      IConnector
-	Builder                            // 塞入一个构建器
-	bindings       map[string][]string // 绑定的操作符与列名之间的映射
-	columns        []string            // 列名()
-	distinct       bool                // 是否用到了去重查询
-	distinctColumn string              // 唯一的列
-	from           string              // 表名
-	joins          string              // 连接
-	wheres         []*whereCondition   // where的数组
-	groups         []string            // 组
-	havings        []string            // group by 之后的操作
-	orders         []string            // 排序
-	limit          int                 // 限制
-	offset         int                 // 偏移
-	unions         []IBuilder          // 联合
-	unionLimit     string
-	unionOffset    string
-	unionOrders    string
-	lock           bool
-	operator       int // 操作符
+	connector       IConnector
+	Builder                             // 塞入一个构建器
+	bindings        map[string][]string // 绑定的操作符与列名之间的映射
+	columns         []string            // 列名()
+	distinct        bool                // 是否用到了去重查询
+	distinctColumns []string            // 唯一的列
+	from            string              // 表名
+	joins           string              // 连接
+	wheres          []*whereCondition   // where的数组
+	groups          []string            // 组
+	havings         []string            // group by 之后的操作
+	orders          []string            // 排序
+	limit           int                 // 限制
+	offset          int                 // 偏移
+	unions          []IBuilder          // 联合
+	unionLimit      string
+	unionOffset     string
+	unionOrders     string
+	lock            bool
+	operator        int // 操作符
 }
 
 const (
@@ -52,6 +52,13 @@ func NewMysqlBuilder() IBuilder {
 	b := &MysqlBuilder{}
 	b.operator = SelectOperator
 	return b
+}
+
+// 去重
+func (m *MysqlBuilder) Distinct(columns ...string) IBuilder {
+	m.distinct = true
+	m.distinctColumns = columns
+	return m
 }
 
 // 删除某些数据
@@ -465,8 +472,44 @@ func (m *MysqlBuilder) Get() IResult {
 
 func selectAssembly(m *MysqlBuilder) (string, []interface{}) {
 	// select * from table where xxxx order by xxx  group by xxx having xxx limit x offset xxx join xxx union ...
+
+	/**
+
+	SELECT
+	   [ALL | DISTINCT | DISTINCTROW ]
+		 [HIGH_PRIORITY]
+		 [STRAIGHT_JOIN]
+		 [SQL_SMALL_RESULT] [SQL_BIG_RESULT] [SQL_BUFFER_RESULT]
+		 [SQL_CACHE | SQL_NO_CACHE] [SQL_CALC_FOUND_ROWS]
+	   select_expr [, select_expr ...]
+	   [FROM table_references
+		 [PARTITION partition_list]
+	   [WHERE where_condition]
+	   [GROUP BY {col_name | expr | position}
+		 [ASC | DESC], ... [WITH ROLLUP]]
+	   [HAVING where_condition]
+	   [ORDER BY {col_name | expr | position}
+		 [ASC | DESC], ...]
+	   [LIMIT {[offset,] row_count | row_count OFFSET offset}]
+	   [PROCEDURE procedure_name(argument_list)]
+	   [INTO OUTFILE 'file_name'
+		   [CHARACTER SET charset_name]
+		   export_options
+		 | INTO DUMPFILE 'file_name'
+		 | INTO var_name [, var_name]]
+	   [FOR UPDATE | LOCK IN SHARE MODE]]
+
+	*/
+
 	var values []interface{}
+
 	s := `select `
+
+	// distinct
+	if m.distinct { // 存在distinct 列
+		m.columns = m.distinctColumns // 如果是distinct，将会忽略前面出现的所有数据
+		s += ` distinct `
+	}
 	// 拼接列
 	if len(m.columns) == 0 {
 		s += ` * `
@@ -481,6 +524,14 @@ func selectAssembly(m *MysqlBuilder) (string, []interface{}) {
 	s += whereSql
 	values = append(values, vals...)
 
+	// group by  having
+	if len(m.groups) > 0 {
+		s += ` group by ` + strings.Join(m.groups, ",")
+	}
+	if len(m.havings) > 0 {
+		s += ` having ` + strings.Join(m.havings, ",")
+	}
+
 	// 拼接order by
 	if len(m.orders) > 0 {
 		s += ` order by ` + strings.Join(m.orders, ",")
@@ -494,13 +545,7 @@ func selectAssembly(m *MysqlBuilder) (string, []interface{}) {
 	if m.offset != 0 {
 		s += ` offset ` + strconv.Itoa(m.offset)
 	}
-	// group by  having
-	if len(m.groups) > 0 {
-		s += ` group by ` + strings.Join(m.groups, ",")
-	}
-	if len(m.havings) > 0 {
-		s += ` having ` + strings.Join(m.havings, ",")
-	}
+
 	return s, values
 }
 

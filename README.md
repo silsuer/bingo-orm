@@ -72,7 +72,8 @@ bingo-orm 是 [bingo](https://github.com/silsuer/bingo) 框架下的一个子模
   - [x] 对表进行增删改
   - [x] 重新组织结果集(ToMapList ToStringMapList)
   - [x] 对表进行简单查询
-  - 对表进行复杂查询(内连接，外链接，子表)
+  - 对表查询时指定优先级
+  - 对表进行复杂查询(内外链接，子表等)
   - [x] mysql事务处理
   - 添加模型处理（对模型增加观察者，模型与db进行关联，底层使用db进行操作）
   - 读写分离
