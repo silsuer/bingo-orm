@@ -3,21 +3,13 @@
 bingo-orm 是 [bingo](https://github.com/silsuer/bingo) 框架下的一个子模块，可以快速沟通数据库
 
 特性:
- - 链式操作
+ - [x] 链式操作
  - 模型
  - 数据库迁移
  - 一键开启数据库连接池
  - 数据库假数据填充
- 
- # 流程
- 
- 1. 连接
-   
-    创建一个工厂
     
-    用工厂创建一个连接器
-    
-# 使用方式
+## 使用方式
 
  1. 连接数据库
    - 单一连接
@@ -34,7 +26,7 @@ bingo-orm 是 [bingo](https://github.com/silsuer/bingo) 框架下的一个子模
 	  c := db.NewConnector(config)  // 传入连接参数，可以得到一个Mysql连接，使用其他数据库则调用其他的新建数据库连接的方法        
      ```
      
-   - 使用数据库连接池
+   - 使用数据库连接池(待定)
    
  2. 创建数据库
      
@@ -67,25 +59,15 @@ bingo-orm 是 [bingo](https://github.com/silsuer/bingo) 框架下的一个子模
   
 ## 接下来的任务
   - [x] 创建表可以添加各种类型的字段（float double 等）  
-  - 实现多态（暂时不实现）
   - [x] 更改表结构
   - [x] 对表进行增删改
   - [x] 重新组织结果集(ToMapList ToStringMapList)
   - [x] 对表进行简单查询
+  - [x] mysql事务处理
+  - 实现多态（暂时不实现）
   - 对表查询时指定优先级
   - 对表进行复杂查询(内外链接，子表等)
-  - [x] mysql事务处理
   - 添加模型处理（对模型增加观察者，模型与db进行关联，底层使用db进行操作）
   - 读写分离
   - 连接池
   - 整理说明文档
-## 知识点
-   
-   mysql的各种类型
-   mysql的索引
-   mysql的各种连接
-   
-   https://blog.csdn.net/gxy_2016/article/details/53436865  日期类型的区别
-   https://blog.csdn.net/MinjerZhang/article/details/78137795 mysql 地理位置
-   http://www.cnblogs.com/cnsanshao/p/3326648.html  数字和ip地址相互转换
-   https://blog.csdn.net/zzc_zcc/article/details/78836505 类型
