@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/silsuer/bingo-orm/db"
+	"fmt"
 )
 
 type User struct {
@@ -104,8 +104,17 @@ func main() {
 	//fmt.Println(res.GetErrors())
 
 	// 查找数据
-	res := c.Table("test").Where("user_id", 1).Get()
+	//res := c.Table("test").Where("user_id", 1).Get()
+	//fmt.Println(res.ToStringMapList())
+
+	// 连接
+	// 内连接
+	res := c.Table("test").InnerJoin("test11").On("test.user_id","test11.user_id").Get()
 	fmt.Println(res.ToStringMapList())
+	// 左外连接
+	// 右外连接
+	// 完全连接
+
 	//err := c.Schema().CreateTable("test11", func(table db.IBlueprint) {
 	//	table.Integer("user_id").Comment("自增id")
 	//	table.String("name").Default("silsuer").Comment("姓名")

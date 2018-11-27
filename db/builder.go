@@ -15,6 +15,14 @@ type IBuilder interface {
 	OrderBy(column string, sort string) IBuilder // 排序
 
 	Get() IResult // 获取查询数据
+
+	InnerJoin(tableName string) IBuilder // 内连接
+	LeftJoin(tableName string) IBuilder  // 左连接
+	RightJoin(tableName string) IBuilder // 右连接
+	FullJoin(tableName string) IBuilder  // 完全连接
+
+	On(conditions ...interface{}) IBuilder // 连接时候的条件
+
 	//First() IResult
 	//Find(id int) IResult
 	//Pluck(column string) []interface{} // 传入一个列名，返回这个列的所有数据
@@ -191,6 +199,28 @@ func (s *SchemaBuilder) CreateDatabaseIfNotExists(args ...string) (sql.Result, e
 
 type Builder struct {
 	//connector IConnector
+}
+
+func (b *Builder) On(condition ...interface{}) IBuilder {
+	return nil
+}
+
+// 左连接
+func (b *Builder) LeftJoin(tableName string) IBuilder {
+	return nil
+}
+
+func (b *Builder) RightJoin(tableName string) IBuilder {
+	return nil
+}
+
+func (b *Builder) FullJoin(tableName string) IBuilder {
+	return nil
+}
+
+// 内连接 inner join
+func (b *Builder) InnerJoin(tableName string) IBuilder {
+	return nil
 }
 
 // order by

@@ -9,7 +9,15 @@ import (
 )
 
 const (
-	ModelTag = "json"
+	InnerJoinType  = "inner join"
+	LeftJoinType   = "left join"
+	RightJoinType  = "right join"
+	FullJoinType   = "full join"
+	ModelTag       = "json"
+	SelectOperator = iota
+	UpdateOperator
+	DeleteOperator
+	InsertOperator
 )
 
 // 空接口
@@ -26,27 +34,22 @@ type MysqlBuilder struct {
 	distinct        bool                // 是否用到了去重查询
 	distinctColumns []string            // 唯一的列
 	from            string              // 表名
-	joins           string              // 连接
-	wheres          []*whereCondition   // where的数组
-	groups          []string            // 组
-	havings         []string            // group by 之后的操作
-	orders          []string            // 排序
-	limit           int                 // 限制
-	offset          int                 // 偏移
-	unions          []IBuilder          // 联合
+	joinType        string              // 连接类型
+	joinTable       string              // 连接的表名
+	joinOn          []*joinOnCondition
+	wheres          []*whereCondition // where的数组
+	groups          []string          // 组
+	havings         []string          // group by 之后的操作
+	orders          []string          // 排序
+	limit           int               // 限制
+	offset          int               // 偏移
+	unions          []IBuilder        // 联合
 	unionLimit      string
 	unionOffset     string
 	unionOrders     string
 	lock            bool
 	operator        int // 操作符
 }
-
-const (
-	SelectOperator = iota
-	UpdateOperator
-	DeleteOperator
-	InsertOperator
-)
 
 func NewMysqlBuilder() IBuilder {
 	b := &MysqlBuilder{}
@@ -78,6 +81,45 @@ func (m *MysqlBuilder) Delete() IResult {
 	}
 	res.result = r
 	return res
+}
+
+func (m *MysqlBuilder) On(condition ...interface{}) IBuilder {
+	switch len(condition) {
+	case 2:
+		c := &joinOnCondition{columnName: condition[0].(string), operator: Equals, value: condition[1]}
+		m.joinOn = append(m.joinOn, c)
+	case 3:
+		c := &joinOnCondition{columnName: condition[0].(string), operator: condition[1].(string), value: condition[2]}
+		m.joinOn = append(m.joinOn, c)
+	default:
+		panic(`The function 'On' need 2 or 3 arguments. Now ` + strconv.Itoa(len(condition)) + ` arguments given.`)
+	}
+	return m
+}
+
+// 内连接
+func (m *MysqlBuilder) InnerJoin(tableName string) IBuilder {
+	m.joinType = InnerJoinType
+	m.joinTable = tableName
+	return m
+}
+
+func (m *MysqlBuilder) LeftJoin(tableName string) IBuilder {
+	m.joinType = LeftJoinType
+	m.joinTable = tableName
+	return m
+}
+
+func (m *MysqlBuilder) RightJoin(tableName string) IBuilder {
+	m.joinType = RightJoinType
+	m.joinTable = tableName
+	return m
+}
+
+func (m *MysqlBuilder) FullJoin(tableName string) IBuilder {
+	m.joinType = FullJoinType
+	m.joinTable = tableName
+	return m
 }
 
 // 单独更新某个域
@@ -175,6 +217,11 @@ func whereAssembly(w []*whereCondition) (string, []interface{}) {
 	s := ` where `
 	var cols []string
 	var vals []interface{}
+
+	if len(w) == 0 {
+		return ``, vals
+	}
+
 	for k := range w {
 		// a > 0
 		if w[k].columnFunc != "" {
@@ -459,7 +506,6 @@ func (m *MysqlBuilder) Get() IResult {
 	// 拼接当前的数据
 	s, vals := selectAssembly(m)
 	values = append(values, vals...)
-
 	// 执行
 	rows, err := m.GetConn().Query(s, values...)
 	res := new(MysqlResult)
@@ -519,6 +565,14 @@ func selectAssembly(m *MysqlBuilder) (string, []interface{}) {
 
 	// 拼接表名
 	s += ` from ` + m.from
+
+	if m.joinType != "" {
+		s += ` ` + m.joinType + ` ` + m.joinTable
+	}
+	onSql, vals := joinOnAssembly(m.joinOn)
+	s += onSql
+	values = append(values, vals...)
+
 	// 拼接where语句
 	whereSql, vals := whereAssembly(m.wheres)
 	s += whereSql
@@ -549,7 +603,18 @@ func selectAssembly(m *MysqlBuilder) (string, []interface{}) {
 	return s, values
 }
 
-//func selectAssembly(m *MysqlBuilder) string {
-//	// 根据传入的builder，构建数据
-//	// select columns from table
-//}
+// join on 语句，返回语句，和对应代码
+func joinOnAssembly(conditions []*joinOnCondition) (string, []interface{}) {
+	// inner join xxx on d.x=1 and c.d=2
+	s := ` on `
+	var values []interface{} // 记录 ？
+	var v []string           // 记录用and构建的数组
+	if len(conditions) == 0 {
+		return ``, values
+	}
+	for k := range conditions {
+		v = append(v, conditions[k].columnName+conditions[k].operator+`?`)
+		values = append(values, conditions[k].value)
+	}
+	return s + strings.Join(v, " and "), values
+}
